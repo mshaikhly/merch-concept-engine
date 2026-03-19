@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  title     String
+  rootTopic String
+  createdAt DateTime @default(now())
+  nodes     Node[]
+}
+
+model Node {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  parentId     String?
+  title        String
+  summary      String?
+  depth        Int
+  notionPageId String?
+  notionUrl    String?
+  createdAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
