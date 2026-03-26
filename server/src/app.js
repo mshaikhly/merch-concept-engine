@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import knowledgeRoutes from "./routes/knowledgeRoutes.js";
+import merchRoutes from "./routes/merchRoutes.js";
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ app.get("/api/health", (req, res) => {
   res.json({ message: "Server running" });
 });
 
-app.use("/api/knowledge", knowledgeRoutes);
+app.use("/api/merch", merchRoutes);
 
 const PORT = process.env.PORT || 5001;
 

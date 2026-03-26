@@ -15,86 +15,49 @@ const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
 });
 
-export const generateRootBranches = async (topic) => {
-  const prompt = `
-You are helping a user structure their thinking.
-
-The user has entered this topic:
-"${topic}"
-
-Return JSON only.
-Do not use markdown.
-Do not wrap the JSON in code fences.
-Do not include any explanation outside the JSON.
-
-Generate:
-1. rootTitle
-2. rootSummary (2 to 3 concise sentences)
-3. exactly 5 child topics
-4. each child topic must have:
-   - title
-   - summary
-
-Return JSON in exactly this shape:
-{
-  "rootTitle": "string",
-  "rootSummary": "string",
-  "children": [
-    {
-      "title": "string",
-      "summary": "string"
-    }
-  ]
-}
-`;
-
-
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-
-  return text;
-};
-
-export const expandNodeBranches = async ({
-  nodeTitle,
-  nodeSummary,
-  ancestorTitles = [],
+export const generateMerchDirections = async ({
+  brand,
+  niche,
+  theme,
+  productType,
+  style,
+  notes,
 }) => {
   const prompt = `
-You are helping a user explore a topic in a structured way.
+You are helping a clothing brand founder generate merchandise concepts.
 
-The user wants to expand this topic:
-Title: "${nodeTitle}"
-Summary: "${nodeSummary || ""}"
+Create exactly 4 distinct merch directions for this brief.
 
-Ancestor topics:
-${ancestorTitles.length ? ancestorTitles.map((t) => `- ${t}`).join("\n") : "- None"}
+Brand: "${brand}"
+Niche: "${niche || ""}"
+Theme: "${theme}"
+Product Type: "${productType || ""}"
+Style: "${style || ""}"
+Notes: "${notes || ""}"
 
 Return JSON only.
 Do not use markdown.
 Do not wrap the JSON in code fences.
 Do not include any explanation outside the JSON.
 
-Generate:
-1. exactly 5 child topics
-2. each child topic must have:
-   - title
-   - summary
-
-Rules:
-- Make the topics one level deeper than the current node
-- Keep them distinct
-- Avoid repeating ancestor topics
-- Make them practical, specific, and useful
-- Keep summaries concise
+Requirements:
+- Each direction must feel commercially usable
+- Each direction must be visually distinct from the others
+- Ideas must be specific enough to inspire actual apparel design
+- Keep them practical for print-on-demand or DTG production
+- Avoid generic filler language
 
 Return JSON in exactly this shape:
 {
-  "children": [
+  "directions": [
     {
+      "id": "dir_1",
       "title": "string",
-      "summary": "string"
+      "theme": "string",
+      "targetAudience": "string",
+      "shortDescription": "string",
+      "visualStyle": "string",
+      "placementHint": "string"
     }
   ]
 }
@@ -102,7 +65,62 @@ Return JSON in exactly this shape:
 
   const result = await model.generateContent(prompt);
   const response = await result.response;
-  const text = response.text();
+  return response.text();
+};
 
-  return text;
+export const expandMerchDirection = async ({ brief, direction }) => {
+  const prompt = `
+You are expanding a merchandise direction into a production-ready apparel concept.
+
+Brand: "${brief.brand}"
+Niche: "${brief.niche || ""}"
+Theme: "${brief.theme}"
+Product Type: "${brief.productType || ""}"
+Style: "${brief.style || ""}"
+Notes: "${brief.notes || ""}"
+
+Selected direction:
+Title: "${direction.title}"
+Theme: "${direction.theme}"
+Target Audience: "${direction.targetAudience}"
+Short Description: "${direction.shortDescription}"
+Visual Style: "${direction.visualStyle}"
+Placement Hint: "${direction.placementHint}"
+
+Return JSON only.
+Do not use markdown.
+Do not wrap the JSON in code fences.
+Do not include any explanation outside the JSON.
+
+Requirements:
+- Make the concept commercially strong and cohesive
+- Make it specific enough for a designer to work from
+- Include practical print notes
+- Keep front and back concepts distinct where appropriate
+- Make the mockup prompt visually clear and usable
+
+Return JSON in exactly this shape:
+{
+  "concept": {
+    "id": "string",
+    "conceptName": "string",
+    "collectionName": "string",
+    "theme": "string",
+    "audience": "string",
+    "designSummary": "string",
+    "frontDesign": "string",
+    "backDesign": "string",
+    "typography": "string",
+    "colorPalette": ["string"],
+    "printNotes": "string",
+    "mockupPrompt": "string",
+    "tags": ["string"],
+    "status": "expanded"
+  }
+}
+`;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text();
 };

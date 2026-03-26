@@ -4,37 +4,21 @@ const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 });
 
-export const saveTreeToNotion = async ({ node, parentPageId, prisma }) => {
-  // Skip if this node already exists in Notion
-  if (node.notionPageId) {
-    const children = await prisma.node.findMany({
-      where: {
-        parentId: node.id,
-      },
-    });
-
-    for (const child of children) {
-      await saveTreeToNotion({
-        node: child,
-        parentPageId: node.notionPageId,
-        prisma,
-      });
-    }
-
-    return;
+export const saveConceptToNotionPage = async ({ brief, concept }) => {
+  if (!process.env.NOTION_PARENT_PAGE_ID) {
+    throw new Error("NOTION_PARENT_PAGE_ID is missing in .env");
   }
-  
-  // 1️⃣ Create page in Notion
+
   const page = await notion.pages.create({
     parent: {
-      page_id: parentPageId,
+      page_id: process.env.NOTION_PARENT_PAGE_ID,
     },
     properties: {
       title: {
         title: [
           {
             text: {
-              content: node.title,
+              content: concept.conceptName,
             },
           },
         ],
@@ -43,45 +27,210 @@ export const saveTreeToNotion = async ({ node, parentPageId, prisma }) => {
     children: [
       {
         object: "block",
-        type: "paragraph",
-        paragraph: {
+        type: "heading_2",
+        heading_2: {
           rich_text: [
             {
               type: "text",
               text: {
-                content: node.summary || "",
+                content: "Merch Brief",
               },
             },
           ],
         },
       },
-    ],
+      paragraphBlock(`Brand: ${brief.brand}`),
+      paragraphBlock(`Niche: ${brief.niche || ""}`),
+      paragraphBlock(`Theme: ${brief.theme}`),
+      paragraphBlock(`Product Type: ${brief.productType || ""}`),
+      paragraphBlock(`Style: ${brief.style || ""}`),
+      paragraphBlock(`Notes: ${brief.notes || ""}`),
+
+      {
+        object: "block",
+        type: "heading_2",
+        heading_2: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Expanded Concept",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(`Collection Name: ${concept.collectionName}`),
+      paragraphBlock(`Audience: ${concept.audience}`),
+      paragraphBlock(`Theme: ${concept.theme}`),
+      paragraphBlock(`Status: ${concept.status}`),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Design Summary",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.designSummary),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Front Design",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.frontDesign),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Back Design",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.backDesign),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Typography",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.typography),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Colour Palette",
+              },
+            },
+          ],
+        },
+      },
+      bulletListBlocks(concept.colorPalette),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Print Notes",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.printNotes),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Mockup Prompt",
+              },
+            },
+          ],
+        },
+      },
+      paragraphBlock(concept.mockupPrompt),
+
+      {
+        object: "block",
+        type: "heading_3",
+        heading_3: {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: "Tags",
+              },
+            },
+          ],
+        },
+      },
+      bulletListBlocks(concept.tags),
+    ].flat(),
   });
 
-  // 2️⃣ Save Notion ID + URL in database
-  await prisma.node.update({
-    where: { id: node.id },
-    data: {
-      notionPageId: page.id,
-      notionUrl: page.url,
-    },
-  });
-
-  // 3️⃣ Get children of this node
-  const children = await prisma.node.findMany({
-    where: {
-      parentId: node.id,
-    },
-  });
-
-  // 4️⃣ Recursively create children pages
-  for (const child of children) {
-    await saveTreeToNotion({
-      node: child,
-      parentPageId: page.id,
-      prisma,
-    });
-  }
-
-  return page;
+  return {
+    pageId: page.id,
+    url: page.url,
+  };
 };
+
+function paragraphBlock(content) {
+  return {
+    object: "block",
+    type: "paragraph",
+    paragraph: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: content || "",
+          },
+        },
+      ],
+    },
+  };
+}
+
+function bulletListBlocks(items = []) {
+  return items.map((item) => ({
+    object: "block",
+    type: "bulleted_list_item",
+    bulleted_list_item: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: item,
+          },
+        },
+      ],
+    },
+  }));
+}

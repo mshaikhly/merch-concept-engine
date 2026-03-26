@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RabbitHole AI",
+  title: "Merch Engine",
   description:
-    "Turn scattered AI conversations into structured thinking trees. Explore ideas, expand insights, and organize knowledge.",
+    "Generate structured merch concepts, refine design directions, and export ready-to-use ideas to Notion.",
 };
 
 export default function RootLayout({
@@ -29,8 +29,8 @@ export default function RootLayout({
         className={`
         ${geistSans.variable}
         ${geistMono.variable}
-       bg-neutral-950
-       text-neutral-100
+        bg-neutral-950
+        text-neutral-100
         font-sans
         min-h-screen
         antialiased
@@ -39,12 +39,13 @@ export default function RootLayout({
         <div className="max-w-6xl mx-auto px-6 py-8">
           <header className="mb-10">
             <h1 className="text-3xl font-bold tracking-tight text-neutral-100">
-              🐇 RabbitHole AI
+              🎯 Merch Engine
             </h1>
             <p className="mt-2 text-sm text-neutral-400">
-              Explore ideas as structured knowledge trees instead of endless AI chats.
+              Turn ideas into structured merch concepts — from direction to production-ready designs.
             </p>
           </header>
+
           {children}
         </div>
       </body>
